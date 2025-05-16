@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chá de Casa Nova Leandro & Bianca 💐</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #fff0f5;
+      margin: 0;
+      padding: 0;
+      color: #444;
+    }
+
+    header {
+      background-color: #f08080;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    main {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin-top: 20px;
+    }
+
+    h2 {
+      color: #f08080;
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 10px;
+    }
+
+    li {
+      background: #ffe4e1;
+      padding: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
+    }
+
+    input[type="checkbox"] {
+      transform: scale(1.3);
+      cursor: pointer;
+    }
+
+    input[type="text"], input[type="submit"], button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+    }
+
+    input[type="submit"], button {
+      background-color: #f08080;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+
+    .confirmados {
+      margin-top: 15px;
+      font-style: italic;
+    }
+
+    .admin {
+      margin-top: 30px;
+      border-top: 1px solid #ccc;
+      padding-top: 20px;
+    }
+
+    #search {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .item-reservado {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    .item-reservado span {
+      font-style: italic;
+    }
+
+    .item-reservado input[type="checkbox"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Chá de Casa Nova Leandro & Bianca 💐</h1>
+    <p>R: PASTOR JAIR APARECIDO CREMONEZE FRANCO 328 JD FLORIDO</p>
+  </header>
+
+  <main>
+    <h2>Lista de Presentes 🎁</h2>
+    <input type="text" id="search" placeholder="Buscar presente..." oninput="carregarPresentes()">
+    <ul id="lista-presentes"></ul>
+
+    <h2>Confirme sua presença 📋</h2>
+    <form id="formPresenca" onsubmit="adicionarNome(event)">
+      <input type="text" id="nome" placeholder="Seu nome" required>
+      <input type="submit" value="Confirmar">
+    </form>
+
+    <div class="confirmados" id="lista-confirmados">
+      <strong>Confirmados:</strong>
+      <ul id="nomes-confirmados"></ul>
+    </div>
+
+    <div class="admin">
+      <h2>Área do dono 🔐</h2>
+      <div id="senha-container">
+        <input type="password" id="senha" placeholder="Digite a senha">
+        <button onclick="verificarSenha()">Entrar</button>
+      </div>
+
+      <div id="conteudo-dono" style="display: none; margin-top: 15px;">
+        <h3>Presentes Reservados:</h3>
+        <ul id="presentes-reservados"></ul>
+        <button onclick="resetarPresentes()">🔄 Resetar presentes</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Áudios -->
+  <audio id="audio-presente" src="Musica/myinstants.mp3" preload="auto"></audio>
+  <audio id="audio-presenca" src="Musica/Confirmado.mp3" preload="auto"></audio>
+
+  <script>
+    const presentes = [
+      "Saleiro", "Tábua de carne", "Tigelas", "Xícaras", "Guardanapos",
+      "Jogo de copo", "Jogo de panela", "Jogo de prato", "Jarra de suco",
+      "Jogo de talheres", "Kit de pia", "Kit de sobremesa", "Panela de pressão",
+      "Peneira", "Porta tempero", "Rodinho de pia", "Abridor de lata",
+      "Abridor de garrafa", "Assadeiras", "Conchas", "Descascador",
+      "Escorredor de louça", "Escorredor de macarrão", "Escumadeira",
+      "Espremedor de alho", "Faqueiro", "Filtro", "Frigideira", "Fruteira",
+      "Garrafa térmica", "Balde", "Ferro de passar", "Funil", "Lixeira", "Pá",
+      "Pano de chão", "Prendedor", "Rodo", "Tábua de passar", "Vassoura",
+      "Cesto de roupa", "Escova sanitária", "Saboneteira",
+      "Toalha de banho (04)", "Toalha de rosto (04)", "Cabides", "Ralador",
+      "Forma de bolo com furo", "Fouet", "Conjunto de medidores",
+      "Espátula de silicone", "Coador de café com cabo de madeira"
+    ];
+
+    function carregarPresentes() {
+      const dadosSalvos = JSON.parse(localStorage.getItem("presentesSelecionados")) || {};
+      const busca = document.getElementById("search").value.toLowerCase();
+      const lista = document.getElementById("lista-presentes");
+      lista.innerHTML = "";
+
+      presentes.forEach(item => {
+        if (!item.toLowerCase().includes(busca)) return;
+
+        const li = document.createElement("li");
+        const span = document.createElement("span");
+        span.textContent = item;
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.dataset.item = item;
+
+        if (dadosSalvos[item]) {
+          checkbox.checked = true;
+          checkbox.disabled = true;
+          li.classList.add("item-reservado");
+          span.title = `Reservado por: ${dadosSalvos[item].nome} em ${dadosSalvos[item].data}`;
+        } else {
+          checkbox.onchange = () => marcarPresente(checkbox);
+        }
+
+        li.appendChild(span);
+        li.appendChild(checkbox);
+        lista.appendChild(li);
+      });
+    }
+
+    function marcarPresente(checkbox) {
+      const nome = prompt("Digite seu nome para reservar este presente:");
+      if (!nome) {
+        checkbox.checked = false;
+        return;
+      }
+
+      const item = checkbox.dataset.item;
+      const dataHora = new Date().toLocaleString();
+      const dados = JSON.parse(localStorage.getItem("presentesSelecionados")) || {};
+
+      dados[item] = { nome, data: dataHora };
+      localStorage.setItem("presentesSelecionados", JSON.stringify(dados));
+
+      document.getElementById("audio-presente").play(); // 🔊 TOCA SOM
+
+      alert("Presente reservado com sucesso!");
+
+      const mensagem = `Olá! Sou *${nome}* e escolhi o presente: *${item}* para o Chá de Casa Nova 💐. Também confirmo minha presença! 🎉`;
+      const telefone = "5519989409943";
+      const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+      window.open(url, "_blank");
+
+      carregarPresentes();
+    }
+
+    function adicionarNome(event) {
+      event.preventDefault();
+      const nome = document.getElementById("nome").value.trim();
+      if (nome) {
+        const confirmados = JSON.parse(localStorage.getItem("confirmados")) || [];
+        if (!confirmados.includes(nome)) {
+          confirmados.push(nome);
+          localStorage.setItem("confirmados", JSON.stringify(confirmados));
+        }
+        document.getElementById("nome").value = "";
+        carregarConfirmados();
+
+        document.getElementById("audio-presenca").play(); // 🔊 TOCA SOM
+
+        const mensagem = `Olá! Sou *${nome}* e confirmo minha presença no Chá de Casa Nova Leandro & Bianca! 💐`;
+        const telefone = "5519989409943";
+        const url = `https://wa.me/${5519989409943}?text=${encodeURIComponent(mensagem)}`;
+        window.open(url, "_blank");
+      }
+    }
+
+    function carregarConfirmados() {
+      const nomes = JSON.parse(localStorage.getItem("confirmados")) || [];
+      const ul = document.getElementById("nomes-confirmados");
+      ul.innerHTML = "";
+      nomes.forEach(nome => {
+        const li = document.createElement("li");
+        li.textContent = nome;
+        ul.appendChild(li);
+      });
+    }
+
+    function verificarSenha() {
+      const senha = document.getElementById("senha").value;
+      if (senha === "1085772512") {
+        document.getElementById("conteudo-dono").style.display = "block";
+        document.getElementById("senha-container").style.display = "none";
+        carregarPresentesAdmin();
+      } else {
+        alert("Senha incorreta!");
+      }
+    }
+
+    function carregarPresentesAdmin() {
+      const dadosSalvos = JSON.parse(localStorage.getItem("presentesSelecionados")) || {};
+      const lista = document.getElementById("presentes-reservados");
+      lista.innerHTML = "";
+
+      Object.keys(dadosSalvos).forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = `${item} - Reservado por: ${dadosSalvos[item].nome} em ${dadosSalvos[item].data}`;
+        lista.appendChild(li);
+      });
+    }
+
+    function resetarPresentes() {
+      if (confirm("Tem certeza que deseja apagar todos os dados?")) {
+        localStorage.removeItem("presentesSelecionados");
+        localStorage.removeItem("confirmados");
+        carregarPresentes();
+        carregarConfirmados();
+        alert("Dados resetados.");
+      }
+    }
+
+    carregarPresentes();
+    carregarConfirmados();
+  </script>
+</body>
+</html>
